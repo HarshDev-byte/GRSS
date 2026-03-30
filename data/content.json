@@ -1,0 +1,14 @@
+{
+  "events": [
+    {"id": "e1", "title": "Remote Sensing Workshop", "date": "2026-05-15", "location": "SIES Campus", "summary": "Hands-on mapping and processing with drones."},
+    {"id": "e2", "title": "Satellite Data Hackathon", "date": "2026-07-10", "location": "Online", "summary": "48-hour challenge using EO datasets."}
+  ],
+  "news": [
+    {"id": "n1", "title": "GRSS SIES GST Founded", "date": "2026-03-01", "summary": "Official founding of the chapter and labs."},
+    {"id": "n2", "title": "Drone Lab First Flight", "date": "2026-03-20", "summary": "Successful field test for coastal mapping."}
+  ],
+  "gallery": [
+    {"id": "g1", "src": "/social-preview.svg", "alt": "Sample satellite imagery"},
+    {"id": "g2", "src": "/favicon.svg", "alt": "Brand mark"}
+  ]
+}
