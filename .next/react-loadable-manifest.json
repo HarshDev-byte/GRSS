@@ -1,8 +1,8 @@
 {
-  "../components/Hero.js -> ./TelemetryWidget": {
-    "id": "../components/Hero.js -> ./TelemetryWidget",
+  "_app.js -> ../components/RoamingCrafts": {
+    "id": "_app.js -> ../components/RoamingCrafts",
     "files": [
-      "static/chunks/components_TelemetryWidget_js.js"
+      "static/chunks/components_RoamingCrafts_js.js"
     ]
   }
 }

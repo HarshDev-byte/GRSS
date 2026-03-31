@@ -1,63 +1,28 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
+
+// Simulate realistic telemetry values that drift over time.
+// When a real backend at ws://localhost:4000 is available, replace the
+// useEffect below with the WebSocket connect() implementation.
+function useTelemetry() {
+  const [tel, setTel] = useState({ satLink: 94, droneActive: 3, ndvi: 0.71 })
+  const [status, setStatus] = useState('live')
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setTel(prev => ({
+        satLink:     Math.min(100, Math.max(70, +(prev.satLink + (Math.random() - 0.48) * 2).toFixed(1))),
+        droneActive: Math.min(6,   Math.max(0,  Math.round(prev.droneActive + (Math.random() > 0.85 ? (Math.random() > 0.5 ? 1 : -1) : 0)))),
+        ndvi:        Math.min(0.95, Math.max(0.40, +(prev.ndvi + (Math.random() - 0.5) * 0.02).toFixed(3))),
+      }))
+    }, 2000)
+    return () => clearInterval(id)
+  }, [])
+
+  return { tel, status }
+}
 
 export default function TelemetryWidget(){
-  const [tel, setTel] = useState({ satLink: null, droneActive: null, ndvi: null })
-  const [status, setStatus] = useState('disconnected')
-  const wsRef = useRef(null)
-  const reconnectRef = useRef(0)
-  const timeoutRef = useRef(null)
-
-  useEffect(()=>{
-    let mounted = true
-
-    function connect(){
-      setStatus('connecting')
-      try{
-        const ws = new WebSocket('ws://localhost:4000')
-        wsRef.current = ws
-
-        ws.onopen = () => {
-          reconnectRef.current = 0
-          if(!mounted) return
-          setStatus('connected')
-        }
-
-        ws.onmessage = (ev) => {
-          try{
-            const msg = JSON.parse(ev.data)
-            if(msg.type === 'telemetry' && mounted) setTel(msg.data)
-          }catch(e){ /* ignore parse errors */ }
-        }
-
-        ws.onclose = () => {
-          if(!mounted) return
-          setStatus('disconnected')
-          // schedule reconnect with exponential backoff
-          const delay = Math.min(30000, 1000 * Math.pow(2, reconnectRef.current))
-          reconnectRef.current += 1
-          timeoutRef.current = setTimeout(connect, delay)
-        }
-
-        ws.onerror = () => {
-          if(!mounted) return
-          setStatus('error')
-          ws.close()
-        }
-      }catch(e){
-        console.warn('WS connect failed', e)
-        setStatus('error')
-        timeoutRef.current = setTimeout(connect, 3000)
-      }
-    }
-
-    connect()
-
-    return ()=>{
-      mounted = false
-      if(timeoutRef.current) clearTimeout(timeoutRef.current)
-      if(wsRef.current) wsRef.current.close()
-    }
-  }, [])
+  const { tel, status } = useTelemetry()
 
   const fmt = (v, suffix = '') => (v === null || v === undefined) ? '--' : `${v}${suffix}`
 
@@ -66,9 +31,9 @@ export default function TelemetryWidget(){
       <div className="p-3 rounded-lg bg-[linear-gradient(135deg,rgba(255,255,255,0.02),rgba(255,255,255,0.03))] border border-glass-border">
         <div className="flex items-center justify-between">
           <div className="text-xs text-slate-400">Sat Link</div>
-          <div className={`text-xxs ${status==='connected' ? 'text-emerald-400' : status==='connecting' ? 'text-amber-300' : 'text-rose-400'}`}>{status}</div>
+          <div className="text-xxs text-emerald-400">{status}</div>
         </div>
-        <div className="mt-2 text-2xl font-bold">{fmt(tel.satLink, typeof tel.satLink === 'number' ? '%' : '')}</div>
+        <div className="mt-2 text-2xl font-bold">{fmt(tel.satLink, '%')}</div>
       </div>
       <div className="p-3 rounded-lg bg-[linear-gradient(135deg,rgba(255,255,255,0.02),rgba(255,255,255,0.03))] border border-glass-border">
         <div className="text-xs text-slate-400">Drone Ops</div>

@@ -2,5 +2,12 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/": "pages/index.js"
+  "/labs/drone": "pages/labs/drone.js",
+  "/": "pages/index.js",
+  "/labs": "pages/labs.js",
+  "/cases": "pages/cases.js",
+  "/research": "pages/research.js",
+  "/partners": "pages/partners.js",
+  "/gallery": "pages/gallery.js",
+  "/join": "pages/join.js"
 }

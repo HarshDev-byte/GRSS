@@ -1,68 +1,133 @@
 import { motion } from 'framer-motion'
-import { PlaneTakeoff, Orbit, ArrowRight } from 'lucide-react'
+import { ArrowUpRight, FlaskConical, MapPin, Shield } from 'lucide-react'
+import { SatelliteIcon, UavIcon, DroneIcon } from './CraftIcons'
 
-export default function LabsSection(){
+const labs = [
+  {
+    title: 'Orbital Satellite Lab',
+    tag: 'SYSTEM // SAT-NET',
+    desc: 'Small-sat communication protocols, hyperspectral imagery telemetry simulators, and next-gen orbital analytics engines.',
+    icon: <SatelliteIcon className="w-9 h-9 text-cyan-400 drop-shadow-[0_0_20px_rgba(0,229,255,0.9)]" />,
+    accent: 'cyan',
+    href: '/labs/satellite',
+    stat: '24 Active Orbits',
+  },
+  {
+    title: 'Autonomous UAV Lab',
+    tag: 'SYSTEM // UAV-ALPHA',
+    desc: 'Precision mapping workflows, real-time edge AI compute, and payload optimization for stealth fixed-wing reconnaissance.',
+    icon: <UavIcon className="w-9 h-9 text-emerald-400 drop-shadow-[0_0_20px_rgba(16,185,129,0.9)]" />,
+    accent: 'emerald',
+    href: '/labs/uav',
+    stat: 'Fleet: 12 Units',
+  },
+  {
+    title: 'Tactical Drone Hub',
+    tag: 'SYSTEM // DRONE-OPS',
+    desc: 'Multi-rotor prototypes engineered for urban reconnaissance, rapid payload delivery, and swarm intelligence coordination.',
+    icon: <DroneIcon className="w-9 h-9 text-fuchsia-400 drop-shadow-[0_0_20px_rgba(217,70,239,0.9)]" />,
+    accent: 'fuchsia',
+    href: '/labs/drone',
+    stat: 'Ops: 142 Missions',
+  },
+]
+
+const accentMap = {
+  cyan:    { border: 'group-hover:border-cyan-500/40',    glow: 'group-hover:shadow-[0_0_60px_rgba(0,229,255,0.12)]',    gradient: 'from-cyan-500/10 to-blue-500/[0.03]',    tag: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20',    cta: 'text-cyan-400 group-hover/cta:text-cyan-300',    icon: 'bg-cyan-500/10 border-cyan-500/20', line: 'via-cyan-500/50' },
+  emerald: { border: 'group-hover:border-emerald-500/40', glow: 'group-hover:shadow-[0_0_60px_rgba(16,185,129,0.12)]',  gradient: 'from-emerald-500/10 to-teal-500/[0.03]',  tag: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20', cta: 'text-emerald-400 group-hover/cta:text-emerald-300', icon: 'bg-emerald-500/10 border-emerald-500/20', line: 'via-emerald-500/50' },
+  fuchsia: { border: 'group-hover:border-fuchsia-500/40', glow: 'group-hover:shadow-[0_0_60px_rgba(217,70,239,0.12)]',  gradient: 'from-fuchsia-500/10 to-purple-500/[0.03]', tag: 'text-fuchsia-400 bg-fuchsia-500/10 border-fuchsia-500/20', cta: 'text-fuchsia-400 group-hover/cta:text-fuchsia-300', icon: 'bg-fuchsia-500/10 border-fuchsia-500/20', line: 'via-fuchsia-500/50' },
+}
+
+export default function LabsSection() {
   return (
-    <section id="labs" className="mt-12 py-12 relative">
-      <div className="absolute top-1/2 left-0 w-72 h-72 bg-accent-blue/10 rounded-full blur-[100px] -z-10 pointer-events-none" />
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
+    <section id="labs" className="mt-16 py-24 relative">
+      {/* Top section rule */}
+      <div className="section-divider mb-20" />
+
+      {/* Section header */}
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-100px" }}
-        transition={{ duration: 0.6 }}
+        viewport={{ once: true, margin: '-80px' }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-16"
       >
-        <h2 className="text-4xl md:text-5xl font-display font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400">
-          Research <span className="text-gradient">Labs</span>
-        </h2>
-        <p className="text-slate-400 mt-4 text-lg max-w-2xl font-light">Drone Lab and Satellite Lab — pushing the boundaries of autonomous research, prototyping, and field ops.</p>
+        <div>
+          <div className="flex items-center gap-3 mb-5">
+            <span className="w-6 h-px bg-cyan-500/50" />
+            <span className="text-[10px] font-mono font-bold tracking-[0.25em] text-cyan-500 uppercase">Research Facilities</span>
+          </div>
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-display font-black tracking-[-0.04em] text-white leading-[1.0]">
+            Aerospace{' '}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500">
+              Research Labs
+            </span>
+          </h2>
+        </div>
+        <p className="text-slate-400 font-light leading-relaxed text-lg max-w-md lg:text-right">
+          Where autonomous robotics meets orbital mechanics. Dedicated facilities for satellite swarms, stealth UAVs, and tactical drone fleets.
+        </p>
       </motion.div>
 
-      <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
-        {[
-          {
-            title: 'Autonomous Drone Lab', 
-            desc: 'Advanced telemetry, mapping workflows, and specialized payload integration for multi-rotor and fixed-wing UAVs.',
-            icon: <PlaneTakeoff size={32} className="text-accent-cyan" />,
-            color: 'from-accent-cyan/10 to-accent-blue/10',
-            glow: 'group-hover:shadow-[0_0_30px_rgba(0,240,255,0.15)]'
-          },
-          {
-            title: 'Satellite & Space Systems', 
-            desc: 'Remote sensing algorithms, small sat communication protocols, and orbital mechanics simulation.',
-            icon: <Orbit size={32} className="text-accent-purple" />,
-            color: 'from-accent-purple/10 to-accent-blue/10',
-            glow: 'group-hover:shadow-[0_0_30px_rgba(181,53,250,0.15)]'
-          }
-        ].map((l, idx) => (
-          <motion.article 
-            key={l.title}
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.5, delay: idx * 0.2 }}
-            whileHover={{ y: -8 }}
-            className={`p-8 rounded-3xl glass-panel relative overflow-hidden group cursor-pointer transition-all duration-500 ${l.glow}`}
-          >
-            <div className={`absolute -inset-px bg-gradient-to-br ${l.color} opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none rounded-3xl`} />
-            
-            <div className="relative z-10">
-              <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
-                {l.icon}
+      {/* Lab cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {labs.map((lab, idx) => {
+          const a = accentMap[lab.accent]
+          return (
+            <motion.article
+              key={lab.title}
+              initial={{ opacity: 0, y: 28 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-80px' }}
+              transition={{ duration: 0.8, delay: idx * 0.12, ease: [0.16, 1, 0.3, 1] }}
+              className={`relative rounded-3xl bg-[#040810]/80 backdrop-blur-xl border border-white/[0.04] ${a.border} ${a.glow} overflow-hidden group transition-all duration-500 flex flex-col min-h-[400px] shadow-[0_8px_40px_rgba(0,0,0,0.5)]`}
+            >
+              {/* Hover mesh gradient */}
+              <div className={`absolute inset-0 bg-gradient-to-br ${a.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-600 pointer-events-none`} />
+
+              {/* Hover bottom bar */}
+              <div className={`absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent ${a.line} to-transparent scale-x-0 group-hover:scale-x-100 transition-transform duration-700`} />
+
+              {/* Top decorative dots */}
+              <div className="absolute top-5 right-5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-400">
+                <div className="w-1 h-1 rounded-full bg-white/20" />
+                <div className="w-1 h-1 rounded-full bg-white/20" />
+                <div className="w-1 h-1 rounded-full bg-white/20" />
               </div>
-              <h3 className="text-2xl font-bold font-display tracking-wide">{l.title}</h3>
-              <p className="mt-3 text-slate-300 leading-relaxed font-light">{l.desc}</p>
-              
-              <div className="mt-8 flex gap-4 items-center">
-                <a href="/labs/satellite" className="group/btn inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-white font-medium border border-white/10 transition-colors">
-                  Explore Lab
-                  <ArrowRight size={16} className="group-hover/btn:translate-x-1 transition-transform" />
+
+              <div className="relative z-10 p-9 flex flex-col h-full">
+                {/* Icon + tag row */}
+                <div className="flex items-start justify-between mb-8">
+                  <div className={`w-16 h-16 rounded-2xl ${a.icon} border flex items-center justify-center shadow-[inset_0_2px_20px_rgba(0,0,0,0.4)]`}>
+                    {lab.icon}
+                  </div>
+                  <div className={`px-3 py-1 rounded-lg text-[9px] font-mono font-bold tracking-[0.2em] uppercase border ${a.tag}`}>
+                    {lab.tag}
+                  </div>
+                </div>
+
+                {/* Text */}
+                <h3 className="text-2xl font-display font-black tracking-tight text-white mb-3 leading-snug">{lab.title}</h3>
+                <p className="text-slate-400 font-light leading-relaxed flex-grow text-[15px]">{lab.desc}</p>
+
+                {/* Stat */}
+                <div className="flex items-center gap-2 mt-6 mb-6 pt-5 border-t border-white/[0.05]">
+                  <Shield size={12} className="text-slate-500" />
+                  <span className="text-[10px] font-mono font-bold tracking-[0.2em] text-slate-500 uppercase">{lab.stat}</span>
+                </div>
+
+                {/* CTA */}
+                <a
+                  href={lab.href}
+                  className={`group/cta inline-flex items-center gap-2 text-[12px] font-mono font-bold tracking-[0.15em] uppercase ${a.cta} transition-colors duration-300`}
+                >
+                  Initialize Access
+                  <ArrowUpRight size={15} className="group-hover/cta:translate-x-0.5 group-hover/cta:-translate-y-0.5 transition-transform duration-300" />
                 </a>
               </div>
-            </div>
-            {/* Background animated flare */}
-            <div className={`absolute bottom-0 right-0 w-32 h-32 blur-[60px] opacity-0 group-hover:opacity-60 transition-opacity duration-700 pointer-events-none ${l.color.split(' ')[0].replace('/10', '/30')}`} />
-          </motion.article>
-        ))}
+            </motion.article>
+          )
+        })}
       </div>
     </section>
   )

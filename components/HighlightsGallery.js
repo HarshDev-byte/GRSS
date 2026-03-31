@@ -1,58 +1,94 @@
 import { motion } from 'framer-motion'
-import { Maximize2, Camera } from 'lucide-react'
+import { Expand, Radio } from 'lucide-react'
+
+// Gallery items — using abstract gradient tiles since no mission photos exist yet
+const TILES = [
+  { id: 1, col: 'md:col-span-2', row: 'row-span-2', label: 'SAT DEPLOY / LOC-4X', tag: 'ORBITAL', grad: 'from-cyan-900/60 via-blue-900/40 to-[#040810]' },
+  { id: 2, col: 'col-span-1',    row: 'row-span-1', label: 'UAV SURVEY / ALPHA-7', tag: 'AIRBORNE', grad: 'from-emerald-900/50 via-teal-900/30 to-[#040810]' },
+  { id: 3, col: 'col-span-1',    row: 'row-span-1', label: 'DRONE RECON / SIGMA-2', tag: 'TACTICAL', grad: 'from-fuchsia-900/50 via-purple-900/30 to-[#040810]' },
+  { id: 4, col: 'md:col-span-2', row: 'row-span-1', label: 'COASTAL MAP / DELTA-9', tag: 'SURVEY', grad: 'from-blue-900/60 via-indigo-900/30 to-[#040810]' },
+]
 
 export default function HighlightsGallery({ items = [] }) {
-  const defaultItems = [
-    { id: 1, src: '/social-preview.svg', col: 'md:col-span-2', row: 'row-span-2' },
-    { id: 2, src: '/favicon.svg', col: 'col-span-1', row: 'row-span-1' },
-    { id: 3, src: '/social-preview.svg', col: 'col-span-1', row: 'row-span-1' },
-    { id: 4, src: '/social-preview.svg', col: 'md:col-span-2', row: 'row-span-1' }
-  ]
-  const data = items.length ? items : defaultItems
+  const tiles = items.length ? items : TILES
 
   return (
-    <section className="mt-32 mb-16" id="gallery">
-      <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-4">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full glass-panel text-xs text-accent-cyan font-mono uppercase tracking-widest border border-accent-cyan/20">
-            <Camera size={14} /> Mission Logs
-          </div>
-          <h3 className="text-3xl font-display font-black text-slate-100 uppercase tracking-tight">Deployment <span className="text-gradient">Highlights</span></h3>
-        </div>
-        <a href="#gallery" className="text-sm font-mono text-accent-cyan hover:underline pb-1">VIEW FULL ARCHIVE</a>
-      </div>
+    <section className="mt-24 mb-8 relative" id="gallery">
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 auto-rows-[160px]">
-        {data.map((it, i) => (
-          <motion.div 
-            key={it.id} 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.6, delay: i * 0.1 }}
-            className={`group relative rounded-2xl overflow-hidden glass-panel border border-white/10 bg-black/50 ${it.col || 'col-span-1'} ${it.row || 'row-span-1'}`}
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-60px' }}
+        transition={{ duration: 0.7 }}
+        className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-12"
+      >
+        <div>
+          <div className="flex items-center gap-3 mb-3">
+            <span className="w-5 h-px bg-cyan-500/60" />
+            <span className="text-[10px] font-mono font-bold tracking-[0.25em] text-cyan-500 uppercase">
+              Mission Logs
+            </span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-display font-black tracking-tight text-white">
+            Deployment Highlights
+          </h2>
+        </div>
+        <a
+          href="#"
+          className="text-[11px] font-mono font-bold tracking-[0.2em] text-slate-400 hover:text-white uppercase transition-colors flex items-center gap-1.5 w-max"
+        >
+          Full Archive →
+        </a>
+      </motion.div>
+
+      {/* Bento grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[180px] gap-4">
+        {tiles.map((t, i) => (
+          <motion.div
+            key={t.id}
+            initial={{ opacity: 0, scale: 0.97 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, margin: '-50px' }}
+            transition={{ duration: 0.6, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+            className={`group relative rounded-2xl overflow-hidden bg-[#040810] border border-white/[0.05] hover:border-white/[0.1] shadow-[0_4px_24px_rgba(0,0,0,0.5)] transition-all duration-500 cursor-pointer ${t.col || ''} ${t.row || ''}`}
           >
-            {/* Image Layer */}
-            <img 
-              src={it.src} 
-              alt={it.alt || 'Highlight capture'} 
-              className="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700 ease-in-out" 
+            {/* Background gradient tile */}
+            <div className={`absolute inset-0 bg-gradient-to-br ${t.grad || 'from-slate-900 to-[#040810]'} group-hover:opacity-80 transition-opacity duration-500`} />
+
+            {/* Subtle dot grid */}
+            <div className="absolute inset-0 opacity-[0.15]"
+              style={{ backgroundImage: 'radial-gradient(rgba(0,229,255,0.3) 1px, transparent 1px)', backgroundSize: '20px 20px' }}
             />
-            {/* Overlay Gradient */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#02040A] via-transparent to-transparent opacity-80" />
-            
-            {/* Hover Icon */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/60 border border-white/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 backdrop-blur-md">
-              <Maximize2 size={18} className="text-white" />
+
+            {/* Overlay gradient for text legibility */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+            {/* Hover expand icon */}
+            <div className="absolute top-3 right-3 w-9 h-9 rounded-xl bg-black/50 backdrop-blur-md border border-white/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 scale-75 group-hover:scale-100">
+              <Expand size={15} className="text-white" />
             </div>
 
-            {/* Simulated Data Badge */}
-            <div className="absolute bottom-4 left-4 font-mono text-[9px] text-accent-cyan uppercase tracking-widest border border-accent-cyan/20 px-2 py-1 rounded bg-black/50 backdrop-blur-sm">
-               IMG_CAP_{5483 + i * 17}
+            {/* Bottom info */}
+            <div className="absolute bottom-0 inset-x-0 p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="flex h-1.5 w-1.5 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500" />
+                </span>
+                <span className="text-[8px] font-mono font-bold tracking-[0.25em] text-slate-400 uppercase">{t.tag}</span>
+              </div>
+              <p className="text-[10px] font-mono font-bold tracking-[0.12em] text-white uppercase leading-tight">
+                {t.label}
+              </p>
             </div>
           </motion.div>
         ))}
       </div>
+
+      <p className="text-center text-[11px] font-mono text-slate-600 tracking-[0.2em] uppercase mt-8">
+        Imagery updated in real-time as missions complete
+      </p>
     </section>
   )
 }

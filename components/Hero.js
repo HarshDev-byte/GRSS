@@ -1,109 +1,357 @@
-import AnimatedGridBackground from './AnimatedGridBackground'
-import AnimatedSky from './AnimatedSky'
-import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
-import { ArrowRight, Satellite, Database, ShieldAlert } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Rocket, Play, Activity, Globe, Target, Crosshair, Wifi, Cpu } from 'lucide-react'
 
-const TelemetryWidget = dynamic(() => import('./TelemetryWidget'), {
-  ssr: false,
-  loading: () => (
-    <div className="h-32 flex flex-col items-center justify-center text-slate-500 gap-2">
-      <div className="w-6 h-6 border-2 border-accent-cyan border-t-transparent rounded-full animate-spin"></div>
-      <span className="text-xs tracking-widest uppercase font-mono">Uplink Securing...</span>
-    </div>
-  ),
-})
+// ── Mercator dot-matrix world map ──────────────────────────────────────────
+const WORLD = [
+  "         #######                    ########    #      ",
+  "       ###########              ####################   ",
+  "      #############            #####################   ",
+  "     ###############          ######################   ",
+  "      #############           #####################    ",
+  "       ###########              ##################     ",
+  "         #######                  ##############       ",
+  "          #####                     ##########         ",
+  "           ###                       ########    ##### ",
+  "            #                         ######     ##### ",
+  "                                       ####       ###  ",
+  "                                        ##             ",
+]
 
-export default function Hero(){
+// Ping "hot spots" – (row, col) pairs that blink as tracked signals
+const HOT_SPOTS = [[1,12],[1,38],[4,10],[5,31],[8,42],[9,48],[8,9],[3,22]]
+
+function WorldMap({ mounted }) {
   return (
-    <section className="pt-32 pb-24 relative overflow-hidden" aria-label="Hero — mission overview" role="region">
-      <AnimatedGridBackground />
-      <AnimatedSky />
-
-      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-        <motion.div
-          initial={{ opacity: 0, x: -40 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-        >
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent-cyan/10 border border-accent-cyan/20 text-accent-cyan text-xs font-mono tracking-widest uppercase mb-6 shadow-glow-cyan">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-cyan opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-cyan"></span>
-            </span>
-            System Online
+    <div className="absolute inset-0 flex items-center justify-center opacity-75 pointer-events-none py-4">
+      <div className="flex flex-col gap-[3.5px]" style={{ transform: 'scale(1.1)' }}>
+        {WORLD.map((row, ri) => (
+          <div key={ri} className="flex gap-[3.5px]">
+            {row.split('').map((ch, ci) => {
+              const hot = mounted && HOT_SPOTS.some(([r,c]) => r===ri && c===ci)
+              const land = ch !== ' '
+              return (
+                <div
+                  key={ci}
+                  className={`w-[3px] h-[3px] rounded-full transition-all duration-700 ${
+                    hot
+                      ? 'bg-white animate-ping shadow-[0_0_6px_#fff]'
+                      : land
+                      ? 'bg-cyan-400/50 shadow-[0_0_4px_rgba(0,229,255,0.35)]'
+                      : 'bg-transparent'
+                  }`}
+                />
+              )
+            })}
           </div>
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-display font-bold leading-[1.1] tracking-tight text-white drop-shadow-lg">
-            Mission: <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-cyan via-blue-400 to-accent-purple animate-gradient-x">
-              Observe. Analyze. Act.
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Live Telemetry Chart ───────────────────────────────────────────────────
+function SparkLine({ color, points }) {
+  return (
+    <svg className="w-full h-[28px] mt-1" viewBox="0 0 100 28" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id={`g-${color}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.4" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <polyline fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" points={points} />
+    </svg>
+  )
+}
+
+// ── Metric mini card ───────────────────────────────────────────────────────
+function MetricChip({ label, value, unit, accent, badge, sparkPoints }) {
+  const colors = {
+    cyan:    { text: 'text-cyan-400',    border: 'hover:border-cyan-500/30',   bg: 'bg-cyan-500/5',    badge: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20', hex: '#00e5ff' },
+    emerald: { text: 'text-emerald-400', border: 'hover:border-emerald-500/30', bg: 'bg-emerald-500/5', badge: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20', hex: '#10b981' },
+    fuchsia: { text: 'text-fuchsia-400', border: 'hover:border-fuchsia-500/30', bg: 'bg-fuchsia-500/5', badge: 'text-fuchsia-400 bg-fuchsia-500/10 border-fuchsia-500/20', hex: '#d946ef' },
+  }
+  const c = colors[accent]
+
+  return (
+    <div className={`${c.bg} border border-white/[0.06] ${c.border} rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden transition-colors duration-300 group`}>
+      <div className="flex items-center justify-between mb-1 relative z-10">
+        <span className="text-[9px] font-mono tracking-[0.2em] text-slate-400 uppercase font-bold">{label}</span>
+        {badge && <span className={`text-[8px] font-mono tracking-widest uppercase px-2 py-0.5 border rounded font-bold ${c.badge}`}>{badge}</span>}
+      </div>
+      <div className={`text-2xl font-display font-black ${c.text} tracking-tight relative z-10 transition-all duration-500 tabular-nums`}>
+        {value}<span className="text-[10px] font-mono ml-1 opacity-70">{unit}</span>
+      </div>
+      <SparkLine color={c.hex} points={sparkPoints} />
+    </div>
+  )
+}
+
+// ── Hero ───────────────────────────────────────────────────────────────────
+export default function Hero() {
+  const [mounted, setMounted] = useState(false)
+  const [m, setM] = useState({ sat: 99.2, drones: 14, lat: 1.2 })
+
+  useEffect(() => {
+    setMounted(true)
+    setM({
+      sat:    parseFloat((Math.random() * 5 + 94).toFixed(1)),
+      drones: Math.floor(Math.random() * 14 + 8),
+      lat:    parseFloat((Math.random() * 1.5 + 0.5).toFixed(2)),
+    })
+    const id = setInterval(() => {
+      setM(p => {
+        let s = parseFloat(p.sat) + (Math.random() * 0.4 - 0.2)
+        s = Math.min(99.9, Math.max(90, s))
+        let d = p.drones
+        if (Math.random() > 0.65) d = Math.min(30, Math.max(5, d + (Math.random() > 0.5 ? 1 : -1)))
+        let l = parseFloat(p.lat) + (Math.random() * 0.3 - 0.15)
+        l = Math.min(5, Math.max(0.1, l))
+        return { sat: s.toFixed(1), drones: d, lat: l.toFixed(2) }
+      })
+    }, 2000)
+    return () => clearInterval(id)
+  }, [])
+
+  return (
+    <section
+      className="relative pt-28 lg:pt-36 pb-24 min-h-screen flex flex-col justify-center overflow-hidden"
+      aria-label="Mission Overview"
+    >
+      {/* ── Ambient background glows ── */}
+      <div className="absolute inset-0 -z-10 pointer-events-none">
+        <div className="absolute top-[-20%] right-[-10%] w-[80vw] h-[80vh] bg-[radial-gradient(ellipse_at_center,rgba(0,229,255,0.06),transparent_65%)]" />
+        <div className="absolute bottom-[-20%] left-[-10%] w-[70vw] h-[70vh] bg-[radial-gradient(ellipse_at_center,rgba(147,51,234,0.05),transparent_65%)]" />
+      </div>
+
+      {/* ── Dot pattern ── */}
+      <div className="absolute inset-0 -z-10 pointer-events-none opacity-30"
+        style={{ backgroundImage: "radial-gradient(rgba(0,229,255,0.12) 1px, transparent 1px)", backgroundSize: "40px 40px" }}
+      />
+
+      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-16 lg:gap-24 items-center w-full">
+
+        {/* ───────── LEFT: Hero Copy ───────── */}
+        <motion.div
+          initial={{ opacity: 0, x: -24 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+        >
+
+          {/* Status pill */}
+          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-emerald-500/[0.07] border border-emerald-500/25 mb-10 shadow-[0_0_20px_rgba(16,185,129,0.1)] backdrop-blur-md">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.9)]" />
             </span>
+            <span className="text-[11px] font-mono font-bold tracking-[0.18em] text-emerald-400 uppercase">Aegis Protocol — Active</span>
+          </div>
+
+          {/* Main heading */}
+          <h1 className="text-[4rem] sm:text-[5.5rem] lg:text-[7rem] font-display font-black leading-[0.9] tracking-[-0.04em] mb-8">
+            <span className="text-white drop-shadow-[0_2px_40px_rgba(255,255,255,0.1)]">Observe.</span><br />
+            <span className="hero-gradient-text drop-shadow-[0_0_60px_rgba(0,229,255,0.25)]">Analyze.</span><br />
+            <span className="text-white/60">Act.</span>
           </h1>
-          <p className="mt-6 text-slate-300 max-w-xl text-lg sm:text-xl font-light leading-relaxed">
-            IEEE GRSS SIES GST — a premier hub for Earth observation, autonomous drone research, satellite telemetry, and applied AI systems.
+
+          {/* Tagline */}
+          <p className="text-slate-400 text-lg font-light leading-relaxed max-w-lg mb-12 pl-5 border-l-2 border-cyan-500/40 relative">
+            <span className="absolute -left-[5px] top-0 w-2.5 h-2.5 rounded-full bg-cyan-500 shadow-[0_0_12px_rgba(0,229,255,0.8)]" />
+            IEEE GRSS SIES GST — Commanding the vanguard of Earth Observation with autonomous drone swarms, satellite telemetry, and predictive AI architectures.
           </p>
 
-          <div className="mt-10 flex flex-wrap gap-4">
-            <a className="group inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-white text-black font-semibold shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:scale-105 transition-all duration-300" href="#labs">
-              Explore Research Labs
-              <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+          {/* CTAs */}
+          <div className="flex flex-wrap gap-4 items-center">
+            <a
+              href="#labs"
+              className="group relative flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-cyan-400 to-blue-600 text-black font-display font-black uppercase tracking-[0.1em] text-[13px] rounded-xl overflow-hidden hover:scale-[1.03] transition-all shadow-[0_0_40px_rgba(0,229,255,0.25)] hover:shadow-[0_0_60px_rgba(0,229,255,0.4)]"
+            >
+              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+              <Rocket size={17} className="relative z-10 group-hover:-translate-y-1 transition-transform" />
+              <span className="relative z-10">Explore Labs</span>
             </a>
-            <a className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl border border-white/10 bg-white/5 backdrop-blur-md text-slate-200 hover:bg-white/10 hover:border-accent-cyan/30 hover:shadow-glow-cyan transition-all duration-300" href="#events">
-              View Directives
+            <a
+              href="#case-study"
+              className="group flex items-center gap-3 px-8 py-4 border border-white/15 text-white font-mono font-bold uppercase tracking-[0.1em] text-[12px] rounded-xl hover:bg-white/[0.04] hover:border-white/30 transition-all backdrop-blur-sm"
+            >
+              <Play size={16} className="group-hover:scale-110 transition-transform" />
+              View Missions
             </a>
+          </div>
+
+          {/* Quick-stat strip */}
+          <div className="flex flex-wrap gap-6 mt-12 pt-8 border-t border-white/[0.06]">
+            {[
+              { label: 'Active Satellites', val: '24+', icon: <Globe size={13} /> },
+              { label: 'Drones Deployed',  val: `${m.drones}`,  icon: <Cpu size={13} /> },
+              { label: 'Latency',          val: `${m.lat}ms`,   icon: <Wifi size={13} /> },
+            ].map(s => (
+              <div key={s.label} className="flex items-center gap-2">
+                <span className="text-cyan-500/70">{s.icon}</span>
+                <span className="text-xl font-display font-black text-white tabular-nums">{s.val}</span>
+                <span className="text-[9px] font-mono tracking-[0.15em] text-slate-500 uppercase">{s.label}</span>
+              </div>
+            ))}
           </div>
         </motion.div>
 
-        <motion.div 
-          className="relative mt-8 lg:mt-0"
-          initial={{ opacity: 0, scale: 0.9, rotateX: 10 }}
-          animate={{ opacity: 1, scale: 1, rotateX: 0 }}
-          transition={{ duration: 1, delay: 0.2, type: "spring", stiffness: 100 }}
-          style={{ perspective: "1000px" }}
+        {/* ───────── RIGHT: Telemetry Panel ───────── */}
+        <motion.div
+          className="relative w-full"
+          initial={{ opacity: 0, scale: 0.96, rotateY: 8 }}
+          animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+          transition={{ duration: 1.0, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          style={{ perspective: '1200px' }}
         >
-          <div className="w-full relative rounded-3xl bg-gradient-to-br from-[#071029]/80 to-[#001022]/80 border border-accent-cyan/20 backdrop-blur-xl p-1 shadow-[0_0_50px_rgba(0,240,255,0.15)] overflow-hidden group">
-            {/* Animated Scanning Line */}
-            <div className="absolute inset-0 w-full h-1 bg-gradient-to-r from-transparent via-accent-cyan to-transparent opacity-50 scan-line z-20 pointer-events-none" />
-            
-            <div className="h-full w-full rounded-2xl bg-[#030712] relative overflow-hidden">
-              {/* Inner subtle grid */}
-              <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none" />
-              
-              <div className="relative p-6 flex flex-col h-full z-10">
-                <div className="flex justify-between items-center border-b border-white/5 pb-4 mb-4">
-                  <div className="flex items-center gap-2">
-                    <Satellite size={16} className="text-accent-cyan" />
-                    <span className="text-xs font-mono text-accent-cyan tracking-widest uppercase">Global Telemetry Uplink</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono text-slate-500 uppercase">SYS_TIME</span>
-                    <span className="text-xs font-mono text-slate-300">UTC-ALIGNED</span>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="bg-white/5 rounded-lg p-3 border border-white/5">
-                    <div className="text-[10px] text-slate-400 font-mono mb-1 flex items-center gap-1"><Database size={10} /> Data Stream</div>
-                    <div className="text-lg font-bold text-white font-mono">48.2 PB/s</div>
-                  </div>
-                  <div className="bg-white/5 rounded-lg p-3 border border-white/5">
-                    <div className="text-[10px] text-slate-400 font-mono mb-1 flex items-center gap-1"><ShieldAlert size={10} /> Threat Level</div>
-                    <div className="text-lg font-bold text-accent-cyan font-mono">NOMINAL</div>
-                  </div>
-                </div>
+          {/* Card glow */}
+          <div className="absolute -inset-4 bg-[radial-gradient(ellipse_at_center,rgba(0,229,255,0.06),transparent_70%)] pointer-events-none" />
 
-                <div className="flex-1 bg-black/40 rounded-xl border border-white/5 p-4 relative overflow-hidden group-hover:border-accent-cyan/20 transition-colors">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-accent-cyan/10 rounded-full blur-[40px] pointer-events-none" />
-                  <div aria-live="polite" className="relative z-10 h-full flex items-center justify-center">
-                    <TelemetryWidget />
+          {/* Main card */}
+          <div className="relative rounded-[28px] p-[1px] bg-gradient-to-b from-cyan-500/30 via-purple-500/10 to-transparent shadow-[0_0_100px_rgba(0,229,255,0.1)]">
+            <div className="w-full rounded-[27px] bg-[#040810]/95 backdrop-blur-2xl p-6 flex flex-col gap-5 relative overflow-hidden">
+
+              {/* Corner accents */}
+              {[
+                'top-0 left-0 border-t-2 border-l-2 border-cyan-400/50 rounded-tl-[27px]',
+                'top-0 right-0 border-t-2 border-r-2 border-cyan-400/50 rounded-tr-[27px]',
+                'bottom-0 left-0 border-b-2 border-l-2 border-purple-500/40 rounded-bl-[27px]',
+                'bottom-0 right-0 border-b-2 border-r-2 border-purple-500/40 rounded-br-[27px]',
+              ].map((cls, i) => (
+                <div key={i} className={`absolute w-7 h-7 ${cls}`} />
+              ))}
+
+              {/* Scan line */}
+              <div className="absolute inset-x-0 top-0 h-px overflow-hidden">
+                <div className="h-full w-1/3 bg-gradient-to-r from-transparent via-cyan-400 to-transparent animate-scan-horizontal opacity-80" />
+              </div>
+
+              {/* Header */}
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2.5">
+                  <Activity size={16} className="text-cyan-400" />
+                  <span className="text-[11px] font-mono font-bold tracking-[0.2em] text-slate-200 uppercase">Live Telemetry</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="px-3 py-1 bg-fuchsia-500/[0.08] border border-fuchsia-500/25 rounded-lg backdrop-blur-sm">
+                    <span className="text-[9px] font-mono tracking-[0.2em] text-fuchsia-400 uppercase font-bold animate-pulse">
+                      ● REC STREAMING
+                    </span>
                   </div>
                 </div>
               </div>
+
+              {/* Map section */}
+              <div className="relative w-full h-52 bg-[#010205] rounded-2xl border border-white/[0.04] overflow-hidden shadow-[inset_0_0_60px_rgba(0,0,0,0.9)]">
+                {/* Tactical grid */}
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(0,229,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(0,229,255,0.025)_1px,transparent_1px)] bg-[size:28px_28px]" />
+
+                <WorldMap mounted={mounted} />
+
+                {/* Radar sweep */}
+                <div className="absolute top-1/2 left-1/2 w-[200%] h-[200%] origin-top-left -translate-x-1/2 -translate-y-1/2 animate-radar-spin pointer-events-none">
+                  <div className="w-1/2 h-1/2 bg-[conic-gradient(from_0deg,transparent_72%,rgba(0,229,255,0.06)_86%,rgba(0,229,255,0.5)_100%)] rounded-tl-full border-l border-cyan-400/40" />
+                </div>
+
+                {/* Cross-hairs */}
+                <div className="absolute inset-0 pointer-events-none">
+                  <div className="absolute top-0 bottom-0 left-1/2 w-px border-l border-dashed border-cyan-500/15" />
+                  <div className="absolute left-0 right-0 top-1/2 h-px border-t border-dashed border-cyan-500/15" />
+                  <Crosshair size={28} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-cyan-500/15" strokeWidth={1} />
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(0,229,255,1)] animate-ring-pulse" />
+                </div>
+
+                {/* Label */}
+                <div className="absolute top-3 left-3 flex items-center gap-2 bg-black/70 backdrop-blur-md px-3 py-1.5 border border-cyan-500/25 rounded-lg">
+                  <Target size={11} className="text-cyan-400 animate-spin-slow" />
+                  <span className="text-[9px] font-mono tracking-[0.2em] text-cyan-400 font-bold uppercase">Global Coordinate Grid</span>
+                </div>
+
+                {/* Orbital lock badge */}
+                <div className="absolute bottom-3 right-3 flex items-center gap-2 bg-black/70 backdrop-blur-md px-3 py-1.5 border border-purple-500/25 rounded-lg">
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse shadow-[0_0_6px_rgba(167,139,250,0.8)]" />
+                  <span className="text-[9px] font-mono tracking-[0.2em] text-purple-400 font-bold uppercase">Orbital Lock</span>
+                </div>
+              </div>
+
+              {/* Metric chips */}
+              <div className="grid grid-cols-3 gap-3">
+                <MetricChip
+                  label="Sat Link"
+                  value={m.sat}
+                  unit="%"
+                  accent="emerald"
+                  badge="Nominal"
+                  sparkPoints="0,20 20,16 40,22 60,10 80,14 100,4"
+                />
+                <MetricChip
+                  label="Drone Ops"
+                  value={m.drones}
+                  unit="Active"
+                  accent="fuchsia"
+                  sparkPoints="0,14 20,10 40,18 60,6 80,12 100,8"
+                />
+                <MetricChip
+                  label="Latency"
+                  value={m.lat}
+                  unit="ms"
+                  accent="cyan"
+                  sparkPoints="0,12 20,12 40,6 60,18 80,10 100,12"
+                />
+              </div>
+
             </div>
           </div>
-          <div className="absolute -bottom-6 right-8 text-[10px] font-mono text-slate-500 uppercase tracking-widest">Secure connection established • 24ms ping</div>
+
+          {/* Floating badge */}
+          <motion.div
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
+            className="absolute -top-5 -right-3 lg:-right-8 px-5 py-3.5 rounded-2xl bg-[#02030d]/90 backdrop-blur-xl border border-purple-500/35 shadow-[0_0_40px_rgba(147,51,234,0.2)] flex flex-col items-center gap-1 z-20"
+          >
+            <span className="text-[8px] font-mono font-bold tracking-[0.25em] text-purple-400 uppercase">Status</span>
+            <span className="text-xs font-display font-black text-white tracking-tight">100% Secure</span>
+          </motion.div>
         </motion.div>
       </div>
+
+      {/* Embedded animation styles */}
+      <style jsx>{`
+        .animate-radar-spin { animation: radarSpin 4s linear infinite; }
+        @keyframes radarSpin {
+          from { transform: translate(-50%,-50%) rotate(0deg); }
+          to   { transform: translate(-50%,-50%) rotate(360deg); }
+        }
+        .animate-scan-horizontal { animation: scanH 5s ease-in-out infinite alternate; }
+        @keyframes scanH {
+          from { transform: translateX(-250%); }
+          to   { transform: translateX(250%); }
+        }
+        .animate-spin-slow { animation: spinSlow 10s linear infinite; }
+        @keyframes spinSlow {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+        .animate-ring-pulse {
+          animation: ringPulse 2.5s ease-in-out infinite;
+        }
+        @keyframes ringPulse {
+          0%,100% { box-shadow: 0 0 0 0 rgba(0,229,255,0.5); }
+          50%      { box-shadow: 0 0 0 10px rgba(0,229,255,0); }
+        }
+        .hero-gradient-text {
+          background-image: linear-gradient(135deg, #00e5ff 0%, #60a5fa 50%, #a78bfa 100%);
+          background-size: 200% auto;
+          animation: shimmer 5s linear infinite;
+          background-clip: text;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+        @keyframes shimmer {
+          from { background-position: 0% center; }
+          to   { background-position: 200% center; }
+        }
+      `}</style>
     </section>
   )
 }
