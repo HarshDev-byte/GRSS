@@ -1,51 +1,62 @@
 import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
-import { Rocket, Play, Activity, Globe, Target, Crosshair, Wifi, Cpu } from 'lucide-react'
+import { useRouter } from 'next/router'
+import { Rocket, Play, Activity, Globe, Target, Crosshair, Wifi, Cpu, Bot, Zap, Network } from 'lucide-react'
+import { ComposableMap, Geographies, Geography, Marker } from "react-simple-maps"
 
-// ── Mercator dot-matrix world map ──────────────────────────────────────────
-const WORLD = [
-  "         #######                    ########    #      ",
-  "       ###########              ####################   ",
-  "      #############            #####################   ",
-  "     ###############          ######################   ",
-  "      #############           #####################    ",
-  "       ###########              ##################     ",
-  "         #######                  ##############       ",
-  "          #####                     ##########         ",
-  "           ###                       ########    ##### ",
-  "            #                         ######     ##### ",
-  "                                       ####       ###  ",
-  "                                        ##             ",
+// ── Live Vector World Map ──────────────────────────────────────────────────
+const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json"
+
+const HOT_SPOTS_COORDS = [
+  [-122.4194, 37.7749], // San Francisco
+  [-74.006, 40.7128],   // New York
+  [-0.1278, 51.5074],   // London
+  [37.6173, 55.7558],   // Moscow
+  [116.4074, 39.9042],  // Beijing
+  [139.6917, 35.6895],  // Tokyo
+  [151.2093, -33.8688], // Sydney
+  [18.4232, -33.9249],  // Cape Town
+  [-58.3816, -34.6037], // Buenos Aires
+  [72.8777, 19.0760],   // Mumbai
+  [55.2708, 25.2048],   // Dubai
 ]
 
-// Ping "hot spots" – (row, col) pairs that blink as tracked signals
-const HOT_SPOTS = [[1,12],[1,38],[4,10],[5,31],[8,42],[9,48],[8,9],[3,22]]
-
 function WorldMap({ mounted }) {
+  if (!mounted) return null
   return (
-    <div className="absolute inset-0 flex items-center justify-center opacity-75 pointer-events-none py-4">
-      <div className="flex flex-col gap-[3.5px]" style={{ transform: 'scale(1.1)' }}>
-        {WORLD.map((row, ri) => (
-          <div key={ri} className="flex gap-[3.5px]">
-            {row.split('').map((ch, ci) => {
-              const hot = mounted && HOT_SPOTS.some(([r,c]) => r===ri && c===ci)
-              const land = ch !== ' '
-              return (
-                <div
-                  key={ci}
-                  className={`w-[3px] h-[3px] rounded-full transition-all duration-700 ${
-                    hot
-                      ? 'bg-white animate-ping shadow-[0_0_6px_#fff]'
-                      : land
-                      ? 'bg-cyan-400/50 shadow-[0_0_4px_rgba(0,229,255,0.35)]'
-                      : 'bg-transparent'
-                  }`}
-                />
-              )
-            })}
-          </div>
+    <div className="absolute inset-0 w-full h-full pointer-events-none flex items-center justify-center overflow-hidden">
+      <ComposableMap
+        projection="geoEquirectangular"
+        projectionConfig={{ scale: 160, center: [0, 10] }}
+        width={800}
+        height={400}
+        style={{ width: "100%", height: "100%", transform: "scale(1.2)" }}
+      >
+        <Geographies geography={geoUrl}>
+          {({ geographies }) =>
+            geographies.map((geo) => (
+              <Geography
+                key={geo.rsmKey}
+                geography={geo}
+                fill="rgba(0, 229, 255, 0.05)"
+                stroke="rgba(0, 229, 255, 0.35)"
+                strokeWidth={0.5}
+                style={{
+                  default: { outline: "none" },
+                  hover: { outline: "none" },
+                  pressed: { outline: "none" },
+                }}
+              />
+            ))
+          }
+        </Geographies>
+        {HOT_SPOTS_COORDS.map((coord, i) => (
+          <Marker key={i} coordinates={coord}>
+            <circle r={3} fill="rgba(0,229,255,0.4)" className="animate-ping" style={{ transformOrigin: "center" }} />
+            <circle r={1.5} fill="#fff" shadow="0 0 6px #fff" />
+          </Marker>
         ))}
-      </div>
+      </ComposableMap>
     </div>
   )
 }
@@ -92,6 +103,34 @@ function MetricChip({ label, value, unit, accent, badge, sparkPoints }) {
 export default function Hero() {
   const [mounted, setMounted] = useState(false)
   const [m, setM] = useState({ sat: 99.2, drones: 14, lat: 1.2 })
+  const router = useRouter()
+  const isRas = router.pathname.startsWith('/ras')
+
+  const content = isRas ? {
+    heading: ['Build.', 'Automate.', 'Deploy.'],
+    tagline: 'IEEE RAS SIES GST — Pioneering the frontier of Robotics & Automation with intelligent autonomous systems, real-time control architectures, and adaptive AI.',
+    cta1: 'Explore Labs',
+    cta2: 'View Projects',
+    stats: [
+      { label: 'Active Bots',     val: `${m.drones}`,  icon: <Bot size={13} /> },
+      { label: 'Automation Nodes', val: '20+',          icon: <Network size={13} /> },
+      { label: 'Latency',         val: `${m.lat}ms`,   icon: <Zap size={13} /> },
+    ],
+    accentColor: 'amber',
+    headingColors: ['text-white', 'text-amber-400', 'text-white/60'],
+  } : {
+    heading: ['Observe.', 'Analyze.', 'Act.'],
+    tagline: 'IEEE GRSS SIES GST — Commanding the vanguard of Earth Observation with autonomous drone swarms, satellite telemetry, and predictive AI architectures.',
+    cta1: 'Explore Labs',
+    cta2: 'View Missions',
+    stats: [
+      { label: 'Active Satellites', val: '24+',         icon: <Globe size={13} /> },
+      { label: 'Drones Deployed',  val: `${m.drones}`, icon: <Cpu size={13} /> },
+      { label: 'Latency',          val: `${m.lat}ms`,  icon: <Wifi size={13} /> },
+    ],
+    accentColor: 'cyan',
+    headingColors: ['text-white', 'hero-gradient-text', 'text-white/60'],
+  }
 
   useEffect(() => {
     setMounted(true)
@@ -139,56 +178,43 @@ export default function Hero() {
           transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
         >
 
-          {/* Status pill */}
-          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-emerald-500/[0.07] border border-emerald-500/25 mb-10 shadow-[0_0_20px_rgba(16,185,129,0.1)] backdrop-blur-md">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.9)]" />
-            </span>
-            <span className="text-[11px] font-mono font-bold tracking-[0.18em] text-emerald-400 uppercase">Aegis Protocol — Active</span>
-          </div>
-
           {/* Main heading */}
           <h1 className="text-[4rem] sm:text-[5.5rem] lg:text-[7rem] font-display font-black leading-[0.9] tracking-[-0.04em] mb-8">
-            <span className="text-white drop-shadow-[0_2px_40px_rgba(255,255,255,0.1)]">Observe.</span><br />
-            <span className="hero-gradient-text drop-shadow-[0_0_60px_rgba(0,229,255,0.25)]">Analyze.</span><br />
-            <span className="text-white/60">Act.</span>
+            <span className="text-white drop-shadow-[0_2px_40px_rgba(255,255,255,0.1)]">{content.heading[0]}</span><br />
+            <span className={`${content.headingColors[1]} drop-shadow-[0_0_60px_rgba(0,229,255,0.25)]`}>{content.heading[1]}</span><br />
+            <span className="text-white/60">{content.heading[2]}</span>
           </h1>
 
           {/* Tagline */}
           <p className="text-slate-400 text-lg font-light leading-relaxed max-w-lg mb-12 pl-5 border-l-2 border-cyan-500/40 relative">
             <span className="absolute -left-[5px] top-0 w-2.5 h-2.5 rounded-full bg-cyan-500 shadow-[0_0_12px_rgba(0,229,255,0.8)]" />
-            IEEE GRSS SIES GST — Commanding the vanguard of Earth Observation with autonomous drone swarms, satellite telemetry, and predictive AI architectures.
+            {content.tagline}
           </p>
 
           {/* CTAs */}
           <div className="flex flex-wrap gap-4 items-center">
             <a
               href="#labs"
-              className="group relative flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-cyan-400 to-blue-600 text-black font-display font-black uppercase tracking-[0.1em] text-[13px] rounded-xl overflow-hidden hover:scale-[1.03] transition-all shadow-[0_0_40px_rgba(0,229,255,0.25)] hover:shadow-[0_0_60px_rgba(0,229,255,0.4)]"
+              className={`group relative flex items-center gap-3 px-8 py-4 ${isRas ? 'bg-gradient-to-r from-amber-400 to-orange-500' : 'bg-gradient-to-r from-cyan-400 to-blue-600'} text-black font-display font-black uppercase tracking-[0.1em] text-[13px] rounded-xl overflow-hidden hover:scale-[1.03] transition-all shadow-[0_0_40px_rgba(0,229,255,0.25)] hover:shadow-[0_0_60px_rgba(0,229,255,0.4)]`}
             >
               <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
               <Rocket size={17} className="relative z-10 group-hover:-translate-y-1 transition-transform" />
-              <span className="relative z-10">Explore Labs</span>
+              <span className="relative z-10">{content.cta1}</span>
             </a>
             <a
               href="#case-study"
               className="group flex items-center gap-3 px-8 py-4 border border-white/15 text-white font-mono font-bold uppercase tracking-[0.1em] text-[12px] rounded-xl hover:bg-white/[0.04] hover:border-white/30 transition-all backdrop-blur-sm"
             >
               <Play size={16} className="group-hover:scale-110 transition-transform" />
-              View Missions
+              {content.cta2}
             </a>
           </div>
 
           {/* Quick-stat strip */}
           <div className="flex flex-wrap gap-6 mt-12 pt-8 border-t border-white/[0.06]">
-            {[
-              { label: 'Active Satellites', val: '24+', icon: <Globe size={13} /> },
-              { label: 'Drones Deployed',  val: `${m.drones}`,  icon: <Cpu size={13} /> },
-              { label: 'Latency',          val: `${m.lat}ms`,   icon: <Wifi size={13} /> },
-            ].map(s => (
+            {content.stats.map(s => (
               <div key={s.label} className="flex items-center gap-2">
-                <span className="text-cyan-500/70">{s.icon}</span>
+                <span className={isRas ? 'text-amber-500/70' : 'text-cyan-500/70'}>{s.icon}</span>
                 <span className="text-xl font-display font-black text-white tabular-nums">{s.val}</span>
                 <span className="text-[9px] font-mono tracking-[0.15em] text-slate-500 uppercase">{s.label}</span>
               </div>

@@ -1,1 +1,0 @@
-self.__REACT_LOADABLE_MANIFEST="{\"_app.js -> ../components/RoamingCrafts\":{\"id\":\"_app.js -> ../components/RoamingCrafts\",\"files\":[\"static/chunks/components_RoamingCrafts_js.js\"]}}"

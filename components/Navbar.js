@@ -4,21 +4,15 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, ArrowUpRight, Radio, Activity, Globe } from 'lucide-react'
 
-const navLinks = [
-  { name: 'Home', path: '/' },
-  { name: 'Labs', path: '/labs' },
-  { name: 'Cases', path: '/cases' },
-  { name: 'Partners', path: '/partners' },
-  { name: 'Research', path: '/research' },
-  { name: 'Gallery', path: '/gallery' },
-]
+
 
 function LiveClock() {
   const [time, setTime] = useState('')
   useEffect(() => {
     const update = () => {
       const d = new Date()
-      setTime(d.toISOString().slice(11, 19) + ' UTC')
+      const timeString = d.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata' })
+      setTime(timeString + ' IST')
     }
     update()
     const id = setInterval(update, 1000)
@@ -28,7 +22,7 @@ function LiveClock() {
     <div className="hidden lg:flex items-center gap-2 px-3 py-1 bg-white/[0.02] border border-white/[0.05] rounded-lg">
       <Globe size={10} className="text-cyan-500 animate-spin-slow" />
       <span className="text-[10px] font-mono tracking-[0.2em] text-slate-400 tabular-nums font-bold">
-        {time || '00:00:00 UTC'}
+        {time || '00:00:00 IST'}
       </span>
     </div>
   )
@@ -39,6 +33,20 @@ export default function Navbar() {
   const [open, setOpen] = useState(false)
   const [hoveredLink, setHoveredLink] = useState(null)
   const router = useRouter()
+
+  const isRas = router.pathname.startsWith('/ras')
+  const chapterPath = isRas ? '/ras' : '/grss'
+  const chapterName = isRas ? 'IEEE RAS' : 'IEEE GRSS'
+  const logoSrc = isRas ? '/ras_logo.png' : '/grss_logo.png' // Assuming ras_logo might not exist yet, fallback gracefully if possible.
+
+  const navLinks = [
+    { name: 'Home', path: chapterPath },
+    { name: 'Labs', path: `${chapterPath}/labs` },
+    { name: 'Cases', path: `${chapterPath}/cases` },
+    { name: 'Partners', path: `${chapterPath}/partners` },
+    { name: 'Teams', path: `${chapterPath}/teams` },
+    { name: 'Gallery', path: `${chapterPath}/gallery` },
+  ]
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -68,14 +76,14 @@ export default function Navbar() {
             <div className="relative flex items-center justify-center p-1.5 rounded-xl bg-white/[0.02] border border-white/[0.06] overflow-hidden group-hover:border-cyan-500/30 transition-colors duration-500">
               <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <img
-                src="/grss_logo.png"
-                alt="IEEE GRSS"
+                src={isRas ? '/grss_logo.png' : '/grss_logo.png'} // Temporarily use GRSS logo for both until RAS logo is provided
+                alt={chapterName}
                 className="h-9 sm:h-11 w-auto object-contain drop-shadow-[0_0_12px_rgba(0,229,255,0.4)] relative z-10"
               />
             </div>
             <div className="hidden lg:flex flex-col">
               <span className="text-[13px] font-display font-black tracking-widest text-white uppercase leading-none drop-shadow-md">
-                IEEE GRSS
+                {chapterName}
               </span>
               <span className="text-[9px] mt-0.5 font-mono font-bold tracking-[0.3em] text-cyan-500/90 uppercase flex items-center gap-1">
                 SIES GST <span className="w-1 h-1 bg-cyan-400 rounded-full animate-ping ml-1" />
@@ -92,8 +100,8 @@ export default function Navbar() {
           onMouseLeave={() => setHoveredLink(null)}
         >
           {navLinks.map((link) => {
-            const isActive = link.path === '/' 
-              ? router.pathname === '/' 
+            const isActive = link.path === chapterPath 
+              ? router.pathname === chapterPath 
               : router.pathname.startsWith(link.path)
 
             return (
@@ -134,17 +142,11 @@ export default function Navbar() {
 
         {/* ── Navbar Right: Status & Actions ── */}
         <div className="hidden md:flex items-center gap-4 shrink-0 z-20">
-          
-          {/* Hexagonal Pulse Status */}
-          <div className="group flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/[0.05] border border-emerald-500/20 backdrop-blur-md hover:bg-emerald-500/[0.1] transition-colors cursor-default">
-            <Activity size={12} className="text-emerald-400" />
-            <span className="text-[9px] font-mono font-bold tracking-[0.2em] text-emerald-400 uppercase">Sys Active</span>
-          </div>
 
           {/* Premium CTA Button */}
           <Link
-            href="/join"
-            className="group relative flex items-center gap-2 px-6 py-2.5 rounded-xl bg-cyan-500 text-black font-mono text-[11px] tracking-[0.15em] uppercase font-black overflow-hidden shadow-[0_0_20px_rgba(0,229,255,0.3)] hover:shadow-[0_0_40px_rgba(0,229,255,0.6)] hover:-translate-y-0.5 transition-all duration-300"
+            href={`${chapterPath}/join`}
+            className={`group relative flex items-center gap-2 px-6 py-2.5 rounded-xl ${isRas ? 'bg-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_40px_rgba(245,158,11,0.6)]' : 'bg-cyan-500 shadow-[0_0_20px_rgba(0,229,255,0.3)] hover:shadow-[0_0_40px_rgba(0,229,255,0.6)]'} text-black font-mono text-[11px] tracking-[0.15em] uppercase font-black overflow-hidden hover:-translate-y-0.5 transition-all duration-300`}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent -translate-x-full group-hover:animate-scan-horizontal" />
             <Radio size={14} className="relative z-10 group-hover:scale-110 transition-transform" />

@@ -1,22 +1,29 @@
 import Link from 'next/link'
 // Removed unused imports
 
-const LINKS = {
+import { useRouter } from 'next/router'
+
+const getLinks = (basePath) => ({
   Directives: [
-    { label: 'Active Projects', href: '/projects' },
-    { label: 'Research Labs',   href: '/labs' },
-    { label: 'Global Summits',  href: '/events' },
-    { label: 'Media Vault',     href: '/gallery' },
+    { label: 'Active Projects', href: `${basePath}/projects` },
+    { label: 'Core Teams',      href: `${basePath}/teams` },
+    { label: 'Global Summits',  href: `${basePath}/events` },
+    { label: 'Media Vault',     href: `${basePath}/gallery` },
   ],
   Uplink: [
     { label: 'contact@grss.global', href: 'mailto:contact@grss.global', mono: true },
     { label: 'Academic Partnerships', href: '#' },
-    { label: 'Join the Network',      href: '/join' },
+    { label: 'Join the Network',      href: `${basePath}/join` },
   ],
-}
+})
 
 export default function Footer() {
   const year = new Date().getFullYear()
+  const router = useRouter()
+  const isRas = router.pathname.startsWith('/ras')
+  const chapterPath = isRas ? '/ras' : '/grss'
+  const chapterName = isRas ? 'IEEE RAS' : 'IEEE GRSS'
+  const links = getLinks(chapterPath)
 
   return (
     <footer className="relative bg-[#01020a] border-t border-white/[0.04] overflow-hidden z-20 mt-0">
@@ -42,7 +49,7 @@ export default function Footer() {
               </div>
               <div>
                 <div className="text-lg font-display font-black tracking-tight text-white uppercase group-hover:text-cyan-400 transition-colors duration-400">
-                  GRSS <span className="text-slate-500 font-medium">SIES GST</span>
+                  {chapterName.replace('IEEE ', '')} <span className="text-slate-500 font-medium">SIES GST</span>
                 </div>
                 <div className="text-[9px] font-mono font-bold tracking-[0.28em] text-cyan-500/50 uppercase mt-1">
                   Est. 2026 · Node Active
@@ -74,7 +81,7 @@ export default function Footer() {
           </div>
 
           {/* Link columns */}
-          {Object.entries(LINKS).map(([heading, items]) => (
+          {Object.entries(links).map(([heading, items]) => (
             <div key={heading} className="flex flex-col gap-4">
               <div className="flex items-center gap-2.5 mb-3">
                 <span className="w-1.5 h-1.5 rounded-full bg-cyan-500" />
@@ -96,7 +103,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="border-t border-white/[0.04] pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-[10px] font-mono font-bold tracking-[0.2em] text-slate-600 uppercase">
-            © {year} IEEE GRSS SIES GST · All Rights Reserved
+            © {year} {chapterName} SIES GST · All Rights Reserved
           </p>
           <div className="flex items-center gap-6">
             <a href="#" className="text-[10px] font-mono font-bold tracking-[0.18em] text-slate-600 hover:text-cyan-400 uppercase transition-colors">Privacy</a>

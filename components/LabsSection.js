@@ -58,9 +58,9 @@ export default function LabsSection() {
             <span className="text-[10px] font-mono font-bold tracking-[0.25em] text-cyan-500 uppercase">Research Facilities</span>
           </div>
           <h2 className="text-4xl sm:text-5xl lg:text-6xl font-display font-black tracking-[-0.04em] text-white leading-[1.0]">
-            Aerospace{' '}
+            Research{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500">
-              Research Labs
+              Labs
             </span>
           </h2>
         </div>
